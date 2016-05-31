@@ -18,12 +18,7 @@ module.exports = function(req, res) {
   var response;
   try {
     response = sync.await(request({
-      url: 'http://api.giphy.com/v1/gifs/search',
-      qs: {
-        q: term,
-        limit: 15,
-        api_key: key
-      },
+      url: 'http://www.reddit.com/r/' + term + '.json',
       gzip: true,
       json: true,
       timeout: 10 * 1000
@@ -38,14 +33,15 @@ module.exports = function(req, res) {
     return;
   }
 
-  var results = _.chain(response.body.data)
-    .reject(function(image) {
-      return !image || !image.images || !image.images.fixed_height_small;
+  // Show only the Title of the reddit posts in the Typeahaed, so we don't overcrowd with too much information.
+  var results = _.chain(response.body.data.children)
+    .reject(function(post) {
+      return !post || !post.data || !post.data.title || !post.data.id;
     })
-    .map(function(image) {
+    .map(function(post) {
       return {
-        title: '<img style="height:75px" src="' + image.images.fixed_height_small.url + '">',
-        text: 'http://giphy.com/' + image.id
+        title: post.data.title,
+        text: 'http://www.reddit.com/' + post.data.id
       };
     })
     .value();
@@ -59,3 +55,4 @@ module.exports = function(req, res) {
     res.json(results);
   }
 };
+
